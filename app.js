@@ -5,6 +5,8 @@
 
 const STORAGE_KEY = 'rs_mobile_sync';
 const THEME_KEY = 'rs_mobile_theme_override';
+const AUTO_SYNC_URL_KEY = 'rs_mobile_auto_sync_url';
+const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 const TRIGGER_TAGS = [
   { id: 'boredom', label: 'Boredom' }, { id: 'loneliness', label: 'Loneliness' },
@@ -119,6 +121,10 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
 });
 
 // ---------- Import ----------
+// Two copies of this form exist in the DOM: one always-visible in the empty state
+// (so first-time sync is reachable before any tab exists to navigate to), and one
+// inside Settings for updating an existing sync later. Both call the same
+// applyImport() so behavior is identical regardless of which one was used.
 document.getElementById('fileTriggerBtn').addEventListener('click', () => {
   document.getElementById('fileInput').click();
 });
@@ -141,8 +147,36 @@ document.getElementById('importCodeBtn').addEventListener('click', () => {
     showStatus("Couldn't read that code — make sure it was copied in full.", false);
   }
 });
+
+document.getElementById('fileTriggerBtnEmpty').addEventListener('click', () => {
+  document.getElementById('fileInputEmpty').click();
+});
+document.getElementById('fileInputEmpty').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    applyImport(JSON.parse(text));
+  } catch {
+    showStatus("Couldn't read that file — make sure it's the sync file from the extension.", false);
+  }
+});
+document.getElementById('importCodeBtnEmpty').addEventListener('click', () => {
+  const code = document.getElementById('codeInputEmpty').value;
+  if (!code.trim()) { showStatus('Paste a sync code first.', false); return; }
+  try {
+    applyImport(decodeSyncCode(code));
+  } catch {
+    showStatus("Couldn't read that code — make sure it was copied in full.", false);
+  }
+});
+
 function showStatus(message, ok) {
-  document.getElementById('importStatus').innerHTML = `<p class="status-msg ${ok ? 'ok' : 'err'}">${escapeHtml(message)}</p>`;
+  const html = `<p class="status-msg ${ok ? 'ok' : 'err'}">${escapeHtml(message)}</p>`;
+  const a = document.getElementById('importStatus');
+  const b = document.getElementById('importStatusEmpty');
+  if (a) a.innerHTML = html;
+  if (b) b.innerHTML = html;
 }
 function applyImport(payload) {
   if (!payload || typeof payload !== 'object' || !payload.streak) {
@@ -153,12 +187,64 @@ function applyImport(payload) {
   localStorage.removeItem(THEME_KEY); // fresh sync's theme choice wins until you override again
   showStatus('Synced — dashboard updated.', true);
   document.getElementById('codeInput').value = '';
+  document.getElementById('codeInputEmpty').value = '';
   render();
 }
 document.getElementById('showSyncFormBtn').addEventListener('click', () => {
   document.getElementById('syncForm').classList.remove('is-hidden');
   document.getElementById('syncCollapsed').classList.add('is-hidden');
 });
+
+// ---------- Auto-sync (optional, only active if a URL is saved) ----------
+let autoSyncInterval = null;
+
+function loadAutoSyncUrl() {
+  return localStorage.getItem(AUTO_SYNC_URL_KEY) || '';
+}
+
+document.getElementById('autoSyncUrlInput').value = loadAutoSyncUrl();
+document.getElementById('saveAutoSyncBtn').addEventListener('click', () => {
+  const url = document.getElementById('autoSyncUrlInput').value.trim();
+  const statusEl = document.getElementById('autoSyncStatus');
+  if (url && !url.startsWith('https://')) {
+    statusEl.textContent = 'That doesn\u2019t look like a valid URL — it should start with https://';
+    return;
+  }
+  localStorage.setItem(AUTO_SYNC_URL_KEY, url);
+  statusEl.textContent = url ? 'Saved — checking every 5 minutes from now on.' : 'Cleared — auto-sync is off.';
+  startAutoSync();
+  if (url) checkAutoSyncNow();
+});
+
+async function checkAutoSyncNow() {
+  const url = loadAutoSyncUrl();
+  if (!url) return;
+  try {
+    // Cache-bust so this actually fetches fresh content each time, not a cached copy
+    // from the last poll a few minutes ago.
+    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const payload = await res.json();
+    if (!payload || typeof payload !== 'object' || !payload.streak) return;
+
+    // Only re-render if this is actually newer than what's already stored, so a
+    // background check doesn't visually flicker the UI for no reason.
+    const existing = loadSynced();
+    if (existing && existing.exportedAt === payload.exportedAt) return;
+
+    saveSynced({ ...payload, importedAt: new Date().toISOString() });
+    render();
+  } catch {
+    // Offline, or the gist URL is temporarily unreachable — just skip this cycle,
+    // the next scheduled check will try again in 5 minutes.
+  }
+}
+
+function startAutoSync() {
+  clearInterval(autoSyncInterval);
+  if (!loadAutoSyncUrl()) return;
+  autoSyncInterval = setInterval(checkAutoSyncNow, AUTO_SYNC_INTERVAL_MS);
+}
 
 // ---------- Theme picker ----------
 document.getElementById('setTheme').addEventListener('change', (e) => {
@@ -172,12 +258,14 @@ let clockInterval = null;
 function render() {
   const data = loadSynced();
   const empty = document.getElementById('emptyState');
+  const emptySync = document.getElementById('emptyStateSyncCard');
   const tabsWrap = document.getElementById('appTabs');
   const syncForm = document.getElementById('syncForm');
   const syncCollapsed = document.getElementById('syncCollapsed');
 
   if (!data) {
     empty.classList.remove('is-hidden');
+    emptySync.classList.remove('is-hidden');
     tabsWrap.classList.add('is-hidden');
     syncForm.classList.remove('is-hidden');
     syncCollapsed.classList.add('is-hidden');
@@ -187,6 +275,7 @@ function render() {
   }
 
   empty.classList.add('is-hidden');
+  emptySync.classList.add('is-hidden');
   tabsWrap.classList.remove('is-hidden');
   syncForm.classList.add('is-hidden');
   syncCollapsed.classList.remove('is-hidden');
@@ -423,3 +512,5 @@ document.querySelectorAll('#urge-stage-checkin [data-result]').forEach((btn) => 
 });
 
 render();
+startAutoSync();
+checkAutoSyncNow(); // also check once immediately on open, don't just wait for the first 5-minute tick

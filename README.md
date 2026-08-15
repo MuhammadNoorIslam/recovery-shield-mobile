@@ -53,3 +53,25 @@ than a packaged APK.
 4. Everything — clock, triggers, progress, history, trigger profile — updates
    immediately. Re-sync anytime the same way; each import fully replaces the
    previous one.
+
+## Auto-sync (optional — off by default, changes the privacy model)
+
+Manual sync is still the default and the recommended path. If you specifically
+want the mobile page to refresh itself automatically instead of you re-syncing
+each time, there's an opt-in path — but understand what it trades away first.
+
+**How it works:** the extension pushes your streak/triggers/setback-metadata (never
+note text) to a **secret GitHub Gist** every 5 minutes, and this app polls that
+gist's URL every 5 minutes too. "Secret" means unlisted and unsearchable — but
+**not** access-controlled: anyone who obtained the exact gist URL could view your
+data. That's a real trade-off, not a technicality, and it's why this is off by
+default and requires deliberately turning it on in the extension.
+
+**To turn it on:**
+1. In the extension: Settings → "GitHub auto-sync" → create a GitHub Personal
+   Access Token scoped to *only* "gist" (github.com/settings/tokens) → paste it
+   in, check "Enable," Save → click "Push now" once to test.
+2. Copy the auto-sync URL it shows you.
+3. In this app: Settings → "Auto-sync" → paste that URL, Save.
+4. From then on, both sides update automatically every 5 minutes, no manual
+   code/file needed — though the manual method still works anytime as a backup.

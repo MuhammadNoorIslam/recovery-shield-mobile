@@ -35,7 +35,21 @@
 
   <div id="emptyState" class="card empty-state">
     <h2>Nothing synced yet</h2>
-    <p class="hint">In the extension on your computer: Settings → Mobile sync → generate a sync file or code, then bring it here. Open the Settings tab (menu, top-left) to import.</p>
+    <p class="hint">In the extension on your computer: Settings → Mobile sync → generate a sync file or code, then bring it here.</p>
+  </div>
+
+  <div id="emptyStateSyncCard" class="card">
+    <h3>Import sync data</h3>
+    <label class="file-label">
+      <span class="btn block" id="fileTriggerBtnEmpty">Choose sync file (.json)</span>
+      <input type="file" id="fileInputEmpty" accept="application/json,.json" />
+    </label>
+    <p class="hint" style="margin-top:10px;">— or —</p>
+    <label>Paste sync code
+      <textarea id="codeInputEmpty" rows="4" placeholder="Paste the code from the extension here"></textarea>
+    </label>
+    <button class="btn primary block" id="importCodeBtnEmpty">Import code</button>
+    <div id="importStatusEmpty"></div>
   </div>
 
   <div id="appTabs" class="is-hidden">
@@ -163,6 +177,16 @@
           <button class="btn primary block" id="importCodeBtn">Import code</button>
           <div id="importStatus"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <h3>Auto-sync (optional)</h3>
+        <p class="hint" style="text-transform:none;">Only works if you turned this on in the extension's Settings → GitHub auto-sync — that's where the data actually comes from. Paste the URL it gives you here, once. This app then checks that URL every 5 minutes on its own, no manual re-sync needed.</p>
+        <label>Auto-sync URL
+          <input type="text" id="autoSyncUrlInput" placeholder="https://gist.githubusercontent.com/..." />
+        </label>
+        <button class="btn secondary block" id="saveAutoSyncBtn">Save</button>
+        <p class="hint" id="autoSyncStatus" style="margin-top:8px; text-transform:none;"></p>
       </div>
 
       <div class="card">
