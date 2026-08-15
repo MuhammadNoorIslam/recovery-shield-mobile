@@ -10,81 +10,227 @@
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="wrap">
-  <div class="brand"><span class="brand-dot"></span>RECOVERY SHIELD — MOBILE</div>
 
-  <!-- ---------- No data synced yet ---------- -->
+<div class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">&#9776;</button>
+  <div class="topbar-brand"><span class="brand-dot"></span>RECOVERY SHIELD</div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-brand">RECOVERY SHIELD</div>
+  <nav>
+    <button class="nav-item active" data-tab="recovery">Recovery</button>
+    <button class="nav-item" data-tab="triggers">Triggers</button>
+    <button class="nav-item" data-tab="progress">Progress</button>
+    <button class="nav-item" data-tab="history">History</button>
+    <button class="nav-item" data-tab="settings">Settings</button>
+  </nav>
+  <button class="btn danger drawer-urge" id="drawerUrgeBtn">I'M HAVING AN URGE</button>
+</div>
+
+<button class="fab-urge" id="fabUrgeBtn">URGE</button>
+
+<div class="wrap">
+
   <div id="emptyState" class="card empty-state">
     <h2>Nothing synced yet</h2>
-    <p class="hint">In the extension on your computer: Settings → Mobile sync → generate a sync file or code, then bring it here.</p>
+    <p class="hint">In the extension on your computer: Settings → Mobile sync → generate a sync file or code, then bring it here. Open the Settings tab (menu, top-left) to import.</p>
   </div>
 
-  <!-- ---------- Synced dashboard ---------- -->
-  <div id="dashboard" class="is-hidden">
-    <div class="card">
-      <div class="eyebrow"><span class="live-dot"></span>YOU ARE CURRENTLY</div>
-      <div class="clock-days" id="clockDays">0</div>
-      <div class="clock-days-label">day<span id="clockDaysPlural">s</span> clean</div>
-      <div class="clock-sub-row">
-        <div class="clock-unit"><span id="clockHours">00</span><label>hrs</label></div>
-        <span class="clock-colon">:</span>
-        <div class="clock-unit"><span id="clockMinutes">00</span><label>min</label></div>
-        <span class="clock-colon">:</span>
-        <div class="clock-unit"><span id="clockSeconds">00</span><label>sec</label></div>
+  <div id="appTabs" class="is-hidden">
+
+    <section id="tab-recovery" class="tab active">
+      <div class="card">
+        <div class="eyebrow"><span class="live-dot"></span>YOU ARE CURRENTLY</div>
+        <div class="clock-days" id="clockDays">0</div>
+        <div class="clock-days-label">day<span id="clockDaysPlural">s</span> clean</div>
+        <div class="clock-sub-row">
+          <div class="clock-unit"><span id="clockHours">00</span><label>hrs</label></div>
+          <span class="clock-colon">:</span>
+          <div class="clock-unit"><span id="clockMinutes">00</span><label>min</label></div>
+          <span class="clock-colon">:</span>
+          <div class="clock-unit"><span id="clockSeconds">00</span><label>sec</label></div>
+        </div>
+        <div class="clock-since" id="clockSince">–</div>
       </div>
-      <div class="clock-since" id="clockSince">–</div>
-    </div>
 
-    <div class="card">
-      <div class="stat-row">
-        <div><span id="statLongest">–</span><label>Longest streak</label></div>
-        <div><span id="statTotal">–</span><label>Total days</label></div>
-        <div><span id="statRelapses">–</span><label>Setbacks</label></div>
+      <div class="card">
+        <div class="stat-row">
+          <div><span id="statLongest">–</span><label>Longest</label></div>
+          <div><span id="statTotal">–</span><label>Total days</label></div>
+          <div><span id="statRelapses">–</span><label>Setbacks</label></div>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <h3>Your high-risk window</h3>
-      <p class="hint" id="windowText" style="text-transform:none;">–</p>
-    </div>
+      <div class="card">
+        <h3>Last setback</h3>
+        <div id="lastSetbackBody"><p class="hint">No setback data in this sync.</p></div>
+      </div>
 
-    <div class="card" id="lastSetbackCard">
-      <h3>Last setback</h3>
-      <div id="lastSetbackBody"><p class="hint">No setback data in this sync.</p></div>
-    </div>
+      <div class="card">
+        <p class="hint" style="text-transform:none; margin:0;">This is a read-only mirror. To log a setback or check in, use the extension on your computer, then re-sync here.</p>
+      </div>
+    </section>
 
-    <div class="card">
-      <h3>Last synced</h3>
-      <p class="hint" id="syncedAtText">–</p>
+    <section id="tab-triggers" class="tab">
+      <h1>Triggers</h1>
+      <div class="card">
+        <h3>High-risk hours</h3>
+        <p class="hint default-flag" id="highRiskDefaultHint" hidden>⚠ Generic starter default — not computed from you yet.</p>
+        <p class="hint custom-flag" id="highRiskCustomHint" hidden>✓ Using the exact hours you set yourself.</p>
+        <ul id="highRiskList" class="plain-list"></ul>
+      </div>
+      <div class="card">
+        <h3>Most dangerous days</h3>
+        <ul id="dangerousDaysList" class="plain-list"></ul>
+      </div>
+      <div class="card">
+        <h3>Most common triggers</h3>
+        <ul id="topTriggersList" class="plain-list"></ul>
+      </div>
+      <div class="card">
+        <h3>Most common devices</h3>
+        <ul id="topDevicesList" class="plain-list"></ul>
+      </div>
+      <div class="card">
+        <p class="hint" style="text-transform:none; margin:0;">Edit your trigger hours and profile in the extension's Settings — this view updates on your next sync.</p>
+      </div>
+    </section>
+
+    <section id="tab-progress" class="tab">
+      <h1>Progress</h1>
+      <div class="card">
+        <h3>Insight</h3>
+        <p id="insightText" class="hint">Log a couple of setbacks to start seeing trend insights here.</p>
+      </div>
+      <div class="card">
+        <h3>Improvement over time</h3>
+        <p class="hint">Days between setbacks — a rising trend means real progress.</p>
+        <div id="gapChart" class="bar-chart"></div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="tab">
+      <h1>History</h1>
+      <p class="hint" id="historyTruncatedHint" hidden style="text-transform:none;">Showing your most recent 20 setbacks (from the sync code). Import the downloaded file instead for your complete history.</p>
+      <div id="historyList"></div>
+      <p id="historyEmpty" class="hint" hidden>No setbacks in this sync — that's a good thing.</p>
+      <p class="hint" style="text-transform:none;">Full written notes stay encrypted in the extension only — they're never included in a sync.</p>
+    </section>
+
+    <section id="tab-settings" class="tab">
+      <h1>Settings</h1>
+
+      <div class="card">
+        <h3>Appearance</h3>
+        <label>Color theme (this phone only — separate from the extension's, but syncs from it fresh each time you import)
+          <select id="setTheme">
+            <option value="default">Default (mint)</option>
+            <option value="ocean">Ocean (blue)</option>
+            <option value="ember">Ember (amber)</option>
+            <option value="rose">Rose</option>
+            <option value="forest">Forest (green)</option>
+            <option value="light">Light</option>
+            <option value="high-contrast">High contrast (accessibility)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card">
+        <h3>Your trigger profile (read-only)</h3>
+        <p class="hint" style="text-transform:none;">Edit these in the extension, not here — this is a mirror.</p>
+        <p class="hint" id="profileTimeText" style="text-transform:none;">–</p>
+        <p class="hint" id="profileDaysText" style="text-transform:none;">–</p>
+        <p class="hint" id="profileTriggersText" style="text-transform:none;">–</p>
+      </div>
+
+      <div class="card">
+        <h3>Sync</h3>
+        <div id="syncCollapsed" class="collapsed-sync-line is-hidden">
+          <p class="hint" id="syncedAtText" style="margin:0;">–</p>
+          <button class="btn sm" id="showSyncFormBtn">Update sync</button>
+        </div>
+        <div id="syncForm">
+          <label class="file-label">
+            <span class="btn block" id="fileTriggerBtn">Choose sync file (.json)</span>
+            <input type="file" id="fileInput" accept="application/json,.json" />
+          </label>
+          <p class="hint" style="margin-top:10px;">— or —</p>
+          <label>Paste sync code
+            <textarea id="codeInput" rows="4" placeholder="Paste the code from the extension here"></textarea>
+          </label>
+          <button class="btn primary block" id="importCodeBtn">Import code</button>
+          <div id="importStatus"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Blocking on your phone</h3>
+        <p class="hint" style="text-transform:none;">This app is a synced dashboard — it can't block sites on its own; a web page fundamentally can't intercept other apps' traffic. Real system-wide blocking on Android takes two minutes with a built-in setting:</p>
+        <ol>
+          <li>Open your phone's <strong>Settings → Network &amp; internet → Private DNS</strong></li>
+          <li>Choose "Private DNS provider hostname"</li>
+          <li>Enter: <code>family-filter-dns.cleanbrowsing.org</code></li>
+          <li>Save</li>
+        </ol>
+        <p class="hint" style="text-transform:none;">This is deliberately a few steps, not a one-tap toggle — that's a feature, not friction to fix. It means removing it mid-urge takes real deliberate effort.</p>
+      </div>
+
+      <div class="card">
+        <h3>What this app can't do</h3>
+        <p class="hint" style="text-transform:none;">No live notifications from this app (that needs a background server this design intentionally doesn't have — notifications come from the extension on your computer, or nothing on mobile). No two-way sync — nothing here writes back to the extension. No site blocking from the app itself — see above.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ---------- Urge / emergency flow ---------- -->
+<div class="urge-view is-hidden" id="urgeView">
+  <button class="urge-close" id="urgeCloseBtn" aria-label="Close">&times;</button>
+
+  <div id="urge-stage-intro" class="urge-stage active">
+    <div class="eyebrow">Urge support</div>
+    <h1>You're here. That's the right move.</h1>
+    <p class="hint">This urge will pass, whether or not you act on it. Let's ride it out together for a few minutes.</p>
+    <div class="urge-timer" id="urgeTimerDisplay">03:00</div>
+    <button class="btn primary block" id="urgeStartBtn">Start</button>
+  </div>
+
+  <div id="urge-stage-active" class="urge-stage">
+    <div class="urge-timer" id="urgeTimerDisplayActive">03:00</div>
+    <div class="urge-step-card">
+      <h2 id="urgeStepTitle"></h2>
+      <p id="urgeStepBody" class="hint"></p>
+    </div>
+    <div class="urge-breathing is-hidden" id="urgeBreathing">
+      <div class="urge-circle"></div>
+      <p class="hint" style="margin-top:10px;">Breathe in… and out…</p>
     </div>
   </div>
 
-  <!-- ---------- Import ---------- -->
-  <div class="card">
-    <h3 id="importHeading">Import sync data</h3>
-    <label class="file-label">
-      <span class="btn block" id="fileTriggerBtn">Choose sync file (.json)</span>
-      <input type="file" id="fileInput" accept="application/json,.json" />
-    </label>
-    <p class="hint" style="margin-top:10px;">— or —</p>
-    <label>Paste sync code
-      <textarea id="codeInput" rows="4" placeholder="Paste the code from the extension here"></textarea>
-    </label>
-    <button class="btn primary block" id="importCodeBtn">Import code</button>
-    <div id="importStatus"></div>
+  <div id="urge-stage-checkin" class="urge-stage">
+    <h1>How are you feeling now?</h1>
+    <p class="hint">Be honest — there's no wrong answer here.</p>
+    <div class="urge-options">
+      <button class="btn block" data-result="passed">The urge has passed</button>
+      <button class="btn block" data-result="weaker">Still there, but weaker</button>
+      <button class="btn block" data-result="strong">Still strong</button>
+    </div>
   </div>
 
-  <!-- ---------- Blocking on your phone ---------- -->
-  <div class="card">
-    <h3>Blocking on your phone</h3>
-    <p class="hint" style="text-transform:none;">This page is a synced dashboard — it can't block sites on its own; a web page fundamentally can't intercept other apps' traffic. Real system-wide blocking on Android takes two minutes with a built-in setting:</p>
-    <ol>
-      <li>Open your phone's <strong>Settings → Network &amp; internet → Private DNS</strong></li>
-      <li>Choose "Private DNS provider hostname"</li>
-      <li>Enter: <code>family-filter-dns.cleanbrowsing.org</code></li>
-      <li>Save</li>
-    </ol>
-    <p class="hint" style="text-transform:none;">This blocks adult content across every app and browser on your phone, not just one — and it's free, with no app to install or maintain.</p>
+  <div id="urge-stage-passed" class="urge-stage">
+    <h1>Good. You did that.</h1>
+    <p class="hint">That's exactly how this gets easier over time — one interrupted moment at a time.</p>
+    <button class="btn primary block" id="urgeDoneBtn">Close</button>
+  </div>
+
+  <div id="urge-stage-continue" class="urge-stage">
+    <h1>Still tough — let's try another minute</h1>
+    <p class="hint">Consider physically leaving the room you're in, or putting your device out of reach for a few minutes.</p>
+    <button class="btn primary block" id="urgeRestartBtn">Do another round</button>
+    <button class="btn block" id="urgeGoRecoveryBtn">Back to Recovery</button>
   </div>
 </div>
 
