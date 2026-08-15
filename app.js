@@ -67,6 +67,22 @@ function formatDateTime(date) {
     undefined, { hour: 'numeric', minute: '2-digit', hour12: true }
   )}`;
 }
+function relativeTime(date) {
+  const diffMs = Date.now() - date.getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min${mins === 1 ? '' : 's'} ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+function syncFreshnessClass(date) {
+  const hours = (Date.now() - date.getTime()) / 3600000;
+  if (hours < 6) return 'ok';
+  if (hours < 48) return ''; // neutral, no flag needed yet
+  return 'err';
+}
 function truncate(str, max) {
   if (!str) return '';
   return str.length > max ? str.slice(0, max).trim() + '…' : str;
@@ -174,7 +190,7 @@ function render() {
   tabsWrap.classList.remove('is-hidden');
   syncForm.classList.add('is-hidden');
   syncCollapsed.classList.remove('is-hidden');
-  document.getElementById('syncedAtText').textContent = `Synced ${formatDateTime(new Date(data.importedAt))}`;
+  updateSyncFreshnessDisplay(data);
 
   applyTheme(currentThemePreference(data.settings?.theme));
   document.getElementById('setTheme').value = currentThemePreference(data.settings?.theme);
@@ -299,6 +315,15 @@ function renderSettingsProfile(data) {
   document.getElementById('profileTriggersText').textContent = `Triggers: ${(p.emotionalTriggers || []).map((t) => labelFor(TRIGGER_TAGS, t)).join(', ') || 'not set'}`;
 }
 
+function updateSyncFreshnessDisplay(data) {
+  const importedAt = new Date(data.importedAt);
+  const freshness = syncFreshnessClass(importedAt);
+  const syncedEl = document.getElementById('syncedAtText');
+  if (!syncedEl) return;
+  syncedEl.textContent = `Synced ${relativeTime(importedAt)} (${formatDateTime(importedAt)})`;
+  syncedEl.style.color = freshness === 'err' ? 'var(--danger)' : freshness === 'ok' ? 'var(--accent)' : '';
+}
+
 function startClock(startIso) {
   clearInterval(clockInterval);
   tick();
@@ -316,6 +341,9 @@ function startClock(startIso) {
     document.getElementById('clockMinutes').textContent = String(minutes).padStart(2, '0');
     document.getElementById('clockSeconds').textContent = String(seconds).padStart(2, '0');
     document.getElementById('clockSince').textContent = startIso ? `Since ${formatDateTime(new Date(startIso))}` : 'Not started';
+
+    const data = loadSynced();
+    if (data) updateSyncFreshnessDisplay(data); // keeps "X ago" honest without a full re-render every second
   }
 }
 
